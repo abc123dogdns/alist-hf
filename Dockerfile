@@ -1,28 +1,33 @@
 FROM debian:latest
 
+# 安装必要工具
 RUN apt-get update && apt-get install -y \
     wget \
-    tar
-RUN apt-get update && apt-get install -y aria2
+    curl \
+    tar \
+    ca-certificates
+
+# 创建目录
 WORKDIR /app
 
-RUN wget https://github.com/cloudreve/Cloudreve/releases/download/3.8.3/cloudreve_3.8.3_linux_amd64.tar.gz \
-    && tar -zxvf cloudreve_3.8.3_linux_amd64.tar.gz \
-    && rm cloudreve_3.8.3_linux_amd64.tar.gz
+# 下载最新版本的 AList（如需固定版本，可改 URL）
+RUN wget https://github.com/alist-org/alist/releases/latest/download/alist-linux-amd64.tar.gz \
+    && tar -zxvf alist-linux-amd64.tar.gz \
+    && rm alist-linux-amd64.tar.gz
 
-RUN chmod 777 /app
-COPY conf.ini /app/conf.ini
-COPY aria2.conf /app/aria2.conf
+# 赋权
+RUN chmod +x ./alist
 
-RUN chmod +x ./cloudreve
-
-RUN mkdir -p /aria2/data
-
-RUN chmod 777 /aria2/data
-
-EXPOSE 8086
-
-# CMD ["./cloudreve","-c","/app/conf.ini"]
+# 添加启动脚本和可选配置（你可以后续 COPY aria2.conf 等）
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
+
+# 将默认数据目录指向 Hugging Face 的持久目录（重要）
+ENV ALIST_DATA=/data
+
+# 持久化路径
+VOLUME ["/data"]
+
+EXPOSE 5244
+
 CMD ["/app/start.sh"]
